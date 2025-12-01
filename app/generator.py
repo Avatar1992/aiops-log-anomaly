@@ -11,6 +11,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 
 logger = logging.getLogger("app")
 logger.setLevel(logging.DEBUG)
+
 handler = RotatingFileHandler(LOG_FILE, maxBytes=500000, backupCount=3)
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 handler.setFormatter(formatter)
@@ -34,27 +35,52 @@ INFO_MESSAGES = [
     "Heartbeat OK for worker %d",
 ]
 
+
 def generate_line():
-    r = random.random()
-    if r < 0.7:
-        return "INFO", random.choice(INFO_MESSAGES) % (random.randint(1, 10), random.randint(1000,9999))
-    elif r < 0.9:
-        return "WARN", random.choice(WARN_MESSAGES) % (random.randint(1,5))
+    """Generate random INFO / WARN / ERROR log lines."""
+    p = random.random()
+
+    if p < 0.7:
+        # INFO logs (most common)
+        template = random.choice(INFO_MESSAGES)
+        try:
+            msg = template % (random.randint(1, 10), random.randint(1000, 9999))
+        except TypeError:
+            msg = template
+        return "INFO", msg
+
+    elif p < 0.9:
+        # WARN logs
+        template = random.choice(WARN_MESSAGES)
+        try:
+            msg = template % random.randint(1, 10)
+        except TypeError:
+            msg = template
+        return "WARN", msg
+
     else:
-        return "ERROR", random.choice(ERROR_MESSAGES) % (random.randint(100,999))
+        # ERROR logs
+        template = random.choice(ERROR_MESSAGES)
+        try:
+            msg = template % random.randint(1, 10)
+        except TypeError:
+            msg = template
+        return "ERROR", msg
+
 
 def main():
     while True:
         level, msg = generate_line()
+
         if level == "INFO":
             logger.info(msg)
         elif level == "WARN":
             logger.warning(msg)
         else:
             logger.error(msg)
-        # variable sleep to create bursts
-        time.sleep(random.uniform(0.05, 0.8))
+
+        time.sleep(random.uniform(0.5, 2))  # adjustable rate
+
 
 if __name__ == "__main__":
     main()
-
