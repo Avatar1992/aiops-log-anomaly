@@ -1,12 +1,10 @@
 version: "3.8"
-
 services:
   loki:
     image: grafana/loki:2.9.1
-    command: -config.file=/etc/loki/loki-config.yaml
+    command: -config.file=/etc/loki/local-config.yaml
     volumes:
-      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
-      - loki-data:/loki
+      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
     ports:
       - "3100:3100"
 
@@ -30,9 +28,9 @@ services:
     build: ./detector
     environment:
       - LOKI_URL=http://loki:3100
-      - SLACK_WEBHOOK=${SLACK_WEBHOOK}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPO=${GITHUB_REPO}
+      - SLACK_WEBHOOK
+      - GITHUB_TOKEN
+      - GITHUB_REPO
       - LOG_QUERY_RANGE_MINUTES=10
       - WINDOW_SIZE=50
       - WINDOW_STEP=25
@@ -40,6 +38,3 @@ services:
     depends_on:
       - loki
       - app
-
-volumes:
-  loki-data:
