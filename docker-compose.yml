@@ -1,12 +1,15 @@
 version: "3.8"
 services:
   loki:
-    image: grafana/loki:2.9.1
-    command: -config.file=/etc/loki/local-config.yaml
-    volumes:
-      - ./loki/loki-config.yml:/etc/loki/local-config.yaml:ro
-    ports:
-      - "3100:3100"
+  image: grafana/loki:2.9.1
+  container_name: loki
+  command: -config.file=/etc/loki/loki-config.yaml
+  volumes:
+    - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+    - loki-data:/loki
+  ports:
+    - "3100:3100"
+  restart: unless-stopped
 
   promtail:
     image: grafana/promtail:2.9.1
@@ -38,3 +41,5 @@ services:
     depends_on:
       - loki
       - app
+    
+
