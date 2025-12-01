@@ -1,35 +1,46 @@
 version: "3.8"
 
 services:
+  # 1. Loki Service (Log Aggregator)
   loki:
-  image: grafana/loki:2.9.1
-  container_name: loki
-  command: -config.file=/etc/loki/loki-config.yaml
-  volumes:
-    - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
-    - loki-data:/loki
-  ports:
-    - "3100:3100"
-  restart: unless-stopped
+    image: grafana/loki:2.9.1
+    container_name: loki
+    command: -config.file=/etc/loki/loki-config.yaml
+    volumes:
+      # Mount the configuration file (read-only)
+      - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+      # Loki's persistent storage volume
+      - loki-data:/loki
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+    # IMPORTANT: Removed `user: 10001` because it causes permission errors
 
+  # 2. Promtail Service (Log Collector)
   promtail:
     image: grafana/promtail:2.9.1
+    container_name: promtail
     volumes:
       - ./promtail/promtail-config.yml:/etc/promtail/config.yml:ro
       - ./app/log:/var/log/app
     command: -config.file=/etc/promtail/config.yml
     depends_on:
       - loki
+    restart: always
 
+  # 3. Application Service (Log Generator)
   app:
     build: ./app
+    container_name: log_generator_app
     volumes:
       - ./app/log:/var/log/app
     depends_on:
       - promtail
 
+  # 4. Detector Service
   detector:
     build: ./detector
+    container_name: anomaly_detector
     environment:
       - LOKI_URL=http://loki:3100
       - SLACK_WEBHOOK
@@ -45,3 +56,4 @@ services:
 
 volumes:
   loki-data:
+    driver: local
