@@ -1,0 +1,44 @@
+name: CI & Scheduled Detector
+
+on:
+  push:
+    branches: [ main ]
+  schedule:
+    - cron: "*/30 * * * *" # every 30 minutes - illustrative; change as needed
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install detector deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r detector/requirements.txt
+      - name: Run detector smoke test (no env) - ensures script runs without failing badly
+        run: |
+          python detector/detector.py
+
+  scheduled-detector:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install deps
+        run: pip install -r detector/requirements.txt
+      - name: Run detector
+        env:
+          LOKI_URL: ${{ secrets.LOKI_URL }}
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPO: ${{ secrets.GITHUB_REPO }}
+        run: |
+          python detector/detector.py
