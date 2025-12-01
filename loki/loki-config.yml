@@ -4,6 +4,9 @@ server:
   http_listen_port: 3100
 
 ingester:
+  wal:
+    enabled: true
+    dir: /loki/wal   # FIX: place WAL inside mounted volume
   lifecycler:
     ring:
       kvstore:
@@ -30,6 +33,10 @@ storage_config:
 
   filesystem:
     directory: /loki/chunks
+
+compactor:
+  working_directory: /loki/compactor      # FIX: required for boltdb-shipper
+  shared_store: filesystem
 
 limits_config:
   enforce_metric_name: false
