@@ -1,22 +1,24 @@
 version: "3.8"
 
 services:
-  # 1. Loki Service (Log Aggregator)
+  # ---------------------------------------------------------
+  # 1. Loki (Log Aggregator)
+  # ---------------------------------------------------------
   loki:
     image: grafana/loki:2.9.1
     container_name: loki
     command: -config.file=/etc/loki/loki-config.yaml
+    user: "10001:10001"          # required for Loki filesystem writes
     volumes:
-      # Mount the configuration file (read-only)
       - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
-      # Loki's persistent storage volume
       - loki-data:/loki
     ports:
       - "3100:3100"
     restart: unless-stopped
-    # IMPORTANT: Removed `user: 10001` because it causes permission errors
 
-  # 2. Promtail Service (Log Collector)
+  # ---------------------------------------------------------
+  # 2. Promtail (Log Collector)
+  # ---------------------------------------------------------
   promtail:
     image: grafana/promtail:2.9.1
     container_name: promtail
@@ -28,7 +30,9 @@ services:
       - loki
     restart: always
 
-  # 3. Application Service (Log Generator)
+  # ---------------------------------------------------------
+  # 3. App (Log Generator)
+  # ---------------------------------------------------------
   app:
     build: ./app
     container_name: log_generator_app
@@ -36,16 +40,19 @@ services:
       - ./app/log:/var/log/app
     depends_on:
       - promtail
+    restart: always
 
-  # 4. Detector Service
+  # ---------------------------------------------------------
+  # 4. Detector (AI anomaly detection + remediation)
+  # ---------------------------------------------------------
   detector:
     build: ./detector
     container_name: anomaly_detector
     environment:
       - LOKI_URL=http://loki:3100
-      - SLACK_WEBHOOK
-      - GITHUB_TOKEN
-      - GITHUB_REPO
+      - SLACK_WEBHOOK=
+      - GITHUB_TOKEN=
+      - GITHUB_REPO=
       - LOG_QUERY_RANGE_MINUTES=10
       - WINDOW_SIZE=50
       - WINDOW_STEP=25
@@ -53,7 +60,28 @@ services:
     depends_on:
       - loki
       - app
+    restart: on-failure
 
+  # ---------------------------------------------------------
+  # 5. Grafana (Dashboards for logs)
+  # ---------------------------------------------------------
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - loki
+    restart: unless-stopped
+
+# -------------------------------------------------------------
+# VOLUMES
+# -------------------------------------------------------------
 volumes:
   loki-data:
-    driver: local
+  grafana-data:
