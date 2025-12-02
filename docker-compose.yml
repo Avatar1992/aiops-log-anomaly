@@ -8,7 +8,7 @@ services:
     image: grafana/loki:2.9.1
     container_name: loki
     command: -config.file=/etc/loki/loki-config.yaml
-    user: "10001:10001"          # required for Loki filesystem writes
+    user: "10001:10001"
     volumes:
       - ./loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
       - loki-data:/loki
@@ -48,11 +48,10 @@ services:
   detector:
     build: ./detector
     container_name: anomaly_detector
+    env_file:
+      - .env        # <-- load secrets from .env
     environment:
       - LOKI_URL=http://loki:3100
-      - SLACK_WEBHOOK=
-      - GITHUB_TOKEN=
-      - GITHUB_REPO=
       - LOG_QUERY_RANGE_MINUTES=10
       - WINDOW_SIZE=50
       - WINDOW_STEP=25
@@ -63,7 +62,7 @@ services:
     restart: on-failure
 
   # ---------------------------------------------------------
-  # 5. Grafana (Dashboards for logs)
+  # 5. Grafana (Dashboards)
   # ---------------------------------------------------------
   grafana:
     image: grafana/grafana:10.2.3
