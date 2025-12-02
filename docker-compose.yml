@@ -45,24 +45,26 @@ services:
   # ---------------------------------------------------------
   # 4. Detector (AI anomaly detection + remediation)
   # ---------------------------------------------------------
+  
   detector:
     build: ./detector
     container_name: anomaly_detector
     env_file:
-      - .env   # load all secrets
+      - .env   # load everything from .env
     environment:
-      - LOKI_URL=${LOKI_URL}
-      - LOG_QUERY_RANGE_MINUTES=${LOG_QUERY_RANGE_MINUTES}
-      - WINDOW_SIZE=${WINDOW_SIZE}
-      - WINDOW_STEP=${WINDOW_STEP}
-      - CONTAMINATION=${CONTAMINATION}
-      - SLACK_WEBHOOK=${SLACK_WEBHOOK}
-      - GITHUB_TOKEN=${GITHUB_TOKEN}
-      - GITHUB_REPO=${GITHUB_REPO}
+      LOKI_URL: ${LOKI_URL}
+      LOG_QUERY_RANGE_MINUTES: ${LOG_QUERY_RANGE_MINUTES}
+      WINDOW_SIZE: ${WINDOW_SIZE}
+      WINDOW_STEP: ${WINDOW_STEP}
+      CONTAMINATION: ${CONTAMINATION}
+      SLACK_WEBHOOK: ${SLACK_WEBHOOK}
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+      GITHUB_REPO: ${GITHUB_REPO}
     depends_on:
       - loki
       - app
     restart: on-failure
+
 
   # ---------------------------------------------------------
   # 5. Grafana (Dashboards)
